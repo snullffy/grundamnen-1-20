@@ -3,24 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#FBF7F0" />
-  <title>Grundämnen Nº 01–20 · Läxförhörsdossier</title>
+  <meta name="theme-color" content="#F6F6F4" />
+  <title>Grundämnen 1–20 · Träna inför läxförhöret</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <!-- Masthead -->
-  <header id="topbar" class="masthead hidden">
-    <button class="mast-link" id="backBtn" aria-label="Tillbaka till index">← Index</button>
-    <div class="ledger" role="group" aria-label="Statistik">
-      <span class="led"><i>Nivå</i><b id="tbLevel">1</b></span>
-      <span class="led"><i>XP</i><b id="tbXp">0</b></span>
-      <span class="led hot"><i>Streak</i><b id="tbStreak">0</b></span>
+  <!-- Header -->
+  <header id="topbar" class="topbar hidden">
+    <div class="topbar-inner">
+      <button class="brand" id="homeBtn" aria-label="Till startsidan">
+        <span class="brand-mark">Gä</span>
+        <span class="brand-name">Grundämnen</span>
+      </button>
+      <div class="ledger" role="group" aria-label="Statistik">
+        <span class="led"><i>Nivå</i><b id="tbLevel">1</b></span>
+        <span class="led"><i>XP</i><b id="tbXp">0</b></span>
+        <span class="led hot"><i>Streak</i><b id="tbStreak">0</b></span>
+      </div>
+      <button class="mast-link" id="themeBtn" aria-label="Växla mellan ljust och mörkt">Tema</button>
     </div>
-    <button class="mast-link" id="themeBtn" aria-label="Växla mörkt/ljust läge">◐ Läge</button>
-    <button class="mast-link" id="homeBtn" aria-label="Hem">Hem</button>
   </header>
 
   <main id="app"></main>

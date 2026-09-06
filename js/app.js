@@ -13,7 +13,6 @@ const App = {
     this.root = document.getElementById("app");
     this.topbar = document.getElementById("topbar");
     document.getElementById("homeBtn").addEventListener("click", () => this.go("home"));
-    document.getElementById("backBtn").addEventListener("click", () => this.go("home"));
     document.getElementById("themeBtn").addEventListener("click", () => this.toggleTheme());
     this.applyTheme();
     this.setupConfetti();
@@ -24,7 +23,7 @@ const App = {
     const theme = (Store.data.settings && Store.data.settings.theme) || "light";
     document.documentElement.dataset.theme = theme;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme === "dark" ? "#151310" : "#EAE5D8");
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#17181C" : "#F6F6F4");
   },
 
   toggleTheme() {
@@ -38,8 +37,8 @@ const App = {
 
   go(view, arg) {
     this.currentView = view;
-    if (view === "home") this.topbar.classList.add("hidden");
-    else this.topbar.classList.remove("hidden");
+    this.topbar.classList.remove("hidden");
+    this.topbar.classList.toggle("is-home", view === "home");
     this.updateTopbar();
     window.scrollTo(0, 0);
     const fn = this.views[view];
@@ -405,7 +404,7 @@ const App = {
   },
 
   burst(count) {
-    const colors = ["#5B8DEF", "#37C871", "#FBAE3C", "#FF7BA6", "#2BB6A6", "#9A7BF0"];
+    const colors = ["#5B5BD6", "#2E9E5B", "#C67A18", "#8385F0", "#6A6E77", "#4B4BC7"];
     const n = count || 90;
     for (let i = 0; i < n; i++) {
       this.parts.push({
