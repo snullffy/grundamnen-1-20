@@ -755,9 +755,10 @@ const Results = {
 
         <div class="spacer"></div>
         <div style="display:grid;gap:12px;">
-          ${trainNames.length ? `<button class="btn btn-amber btn-block" id="trainWeak">🎯 Träna på mina svaga ämnen</button>` : ""}
-          <button class="btn btn-accent btn-block" id="again">🔁 Kör igen</button>
-          <button class="btn btn-dark btn-block" id="home2">🏠 Till start</button>
+          ${Store.mistakeList().length ? `<button class="btn btn-solid btn-block" id="doMiss">🔁 Gör om felen (${Store.mistakeList().length})</button>` : ""}
+          ${trainNames.length ? `<button class="btn btn-block" id="trainWeak">🎯 Träna på mina svaga ämnen</button>` : ""}
+          <button class="btn btn-block" id="again">↻ Kör igen</button>
+          <button class="btn btn-block" id="home2">🏠 Till start</button>
         </div>
       </section>
     `);
@@ -767,13 +768,15 @@ const Results = {
 
     if (perfect || knowAll || pct >= 90) app.burst();
 
+    const dm = document.getElementById("doMiss");
+    if (dm) dm.addEventListener("click", () => app.go("mistakes"));
     const tw = document.getElementById("trainWeak");
     if (tw) tw.addEventListener("click", () => app.go("review"));
     document.getElementById("again").addEventListener("click", () => {
       // Kör samma läge igen om möjligt.
       const map = { "Snabbquiz": "quiz", "Repetera svåra": "review", "Prov imorgon": "examtomorrow",
                     "Snabbtest": "quicktest", "Prov-simulering": "examsim", "Kan jag alla 20": "finaltest",
-                    "Skriv allt": "blind" };
+                    "Skriv allt": "blind", "Gör om fel": "mistakes" };
       app.go(map[label] || "home");
     });
     document.getElementById("home2").addEventListener("click", () => app.go("home"));

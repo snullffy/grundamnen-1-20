@@ -107,6 +107,7 @@ const App = {
             <button class="btn btn-primary" data-go="learn"><span class="emj">📚</span><span>Lär dig<small>Korten steg för steg</small></span></button>
             <button class="btn btn-accent" data-go="quiz"><span class="emj">⚡</span><span>Snabbquiz<small>4 delar · adaptivt</small></span></button>
             <button class="btn btn-amber" data-go="review"><span class="emj">🎯</span><span>Repetera svåra<small>Dina svaga ämnen</small></span></button>
+            <button class="btn btn-red" data-go="mistakes"><span class="emj">🔁</span><span>Gör om fel<small>${Store.mistakeList().length ? Store.mistakeList().length + " att träna om" : "Inga fel just nu"}</small></span></button>
             <button class="btn btn-green" data-go="blind"><span class="emj">✍️</span><span>Skriv allt<small>Fyll i på blindo</small></span></button>
             <button class="btn btn-purple" data-go="table"><span class="emj">📋</span><span>Fyll i tabellen<small>Göm & skriv in</small></span></button>
             <button class="btn btn-pink" data-go="quicktest"><span class="emj">📝</span><span>Snabbtest<small>10 eller 20 frågor</small></span></button>
@@ -207,6 +208,69 @@ const App = {
         length: Math.max(8, Math.min(14, pool.length * 2)),
         pool,
         showFeedback: true
+      });
+    },
+
+    // ---------------- GÖR OM FEL (mistakes) ----------------
+    mistakes() {
+      const list = Store.mistakeList();
+      if (list.length === 0) {
+        this.html(`
+          <section class="view center-col">
+            <header class="hero"><h1>Gör om fel</h1><p>Här samlas allt du svarar fel på.</p></header>
+            <div class="feedback ok" style="text-align:center;margin-top:10px;">
+              <div class="fb-title">🎉 Inga fel just nu!</div>
+              <div class="fb-body">Du har inga grundämnen i fel-listan. Kör ett quiz så dyker det du missar upp här automatiskt.</div>
+            </div>
+            <div class="spacer"></div>
+            <div style="display:grid;gap:12px;">
+              <button class="btn btn-solid btn-block" data-go="quiz">⚡ Kör ett quiz</button>
+              <button class="btn btn-block" id="allBtn2">🎲 Gör alla 20</button>
+              <button class="btn btn-block" data-go="home">🏠 Till start</button>
+            </div>
+          </section>`);
+        this.root.querySelectorAll("[data-go]").forEach((b) =>
+          b.addEventListener("click", () => this.go(b.dataset.go)));
+        document.getElementById("allBtn2").addEventListener("click", () =>
+          Quiz.startAdaptive.call(this, { label: "Snabbquiz", length: 14, pool: Engine.allElements(), showFeedback: true }));
+        return;
+      }
+
+      const chips = list.map((n) => {
+        const e = Engine.byNumber(n);
+        return `<span class="miss-chip">${e.symbol} <b>${e.name}</b></span>`;
+      }).join("");
+
+      this.html(`
+        <section class="view">
+          <header class="hero"><h1>Gör om fel</h1><p>${list.length} grundämne${list.length === 1 ? "" : "n"} du har haft fel på.</p></header>
+          <p class="mode-desc">Smart repetition: appen tränar just det du missat tills du kan det. När du svarar rätt försvinner ämnet härifrån automatiskt. Allt sparas lokalt i din webbläsare.</p>
+
+          <div class="section-title">Dina fel</div>
+          <div class="miss-list">${chips}</div>
+
+          <div class="spacer"></div>
+          <div style="display:grid;gap:12px;">
+            <button class="big-final-btn" id="doMistakes">🔁 Träna på mina fel (${list.length})</button>
+            <button class="btn btn-block" id="allBtn2">🎲 Gör alla 20 istället</button>
+            <button class="btn btn-block" id="clearMiss">🧹 Rensa fel-listan</button>
+          </div>
+        </section>
+      `);
+
+      document.getElementById("doMistakes").addEventListener("click", () => {
+        Quiz.startAdaptive.call(this, {
+          label: "Gör om fel",
+          length: Math.max(8, Math.min(16, list.length * 2)),
+          pool: list.map((n) => Engine.byNumber(n)),
+          showFeedback: true,
+          forceMix: true
+        });
+      });
+      document.getElementById("allBtn2").addEventListener("click", () =>
+        Quiz.startAdaptive.call(this, { label: "Snabbquiz", length: 14, pool: Engine.allElements(), showFeedback: true }));
+      document.getElementById("clearMiss").addEventListener("click", () => {
+        if (confirm("Rensa listan med fel?")) { Store.data.mistakes = []; Store.save(); this.go("mistakes"); }
       });
     },
 
@@ -368,8 +432,12 @@ const App = {
         this.award(50);
         this.toast("🧠 Grundämne bemästrat! +50 XP");
       }
+      // Rätt svar → ta bort från fel-listan.
+      Store.removeMistake(question.element.number);
     } else {
       this.currentStreak = 0;
+      // Fel svar → spara i fel-listan lokalt så det kan tränas om.
+      Store.addMistake(question.element.number);
     }
     Store.data.currentStreak = this.currentStreak;
     Store.save();

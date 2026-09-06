@@ -398,6 +398,18 @@ main { max-width: var(--maxw); margin: 0 auto; padding: clamp(18px,4vw,32px) var
 .hard-row .ra { font-weight: 700; }
 
 /* ==========================================================================
+   MISTAKES ("Gör om fel")
+   ========================================================================== */
+.miss-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.miss-chip {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 8px 13px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--border-2);
+  font-size: 14px; color: var(--muted); box-shadow: var(--shadow-xs);
+}
+.miss-chip b { color: var(--text); font-weight: 600; }
+
+/* ==========================================================================
    PILLS
    ========================================================================== */
 .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }

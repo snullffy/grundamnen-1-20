@@ -27,6 +27,7 @@ const Store = {
       quizzesCompleted: 0,
       answeredCount: 0,    // global räknare (används som "tid" för SRS)
       lastResults: [],     // [{mode, score, total, pct, date}]
+      mistakes: [],        // grundämnen (nummer) man svarat fel på – sparas lokalt
       achievements: {},    // id -> true
       settings: { sound: true },
       elements
@@ -66,6 +67,23 @@ const Store = {
 
   el(number) {
     return this.data.elements[number];
+  },
+
+  // ---- Fel-lista ("gör om fel") sparad lokalt ----
+  addMistake(number) {
+    if (!Array.isArray(this.data.mistakes)) this.data.mistakes = [];
+    // Ta bort ev. tidigare förekomst och lägg först (senaste felet överst).
+    this.data.mistakes = this.data.mistakes.filter((n) => n !== number);
+    this.data.mistakes.unshift(number);
+    if (this.data.mistakes.length > 20) this.data.mistakes.length = 20;
+  },
+  removeMistake(number) {
+    if (!Array.isArray(this.data.mistakes)) { this.data.mistakes = []; return; }
+    this.data.mistakes = this.data.mistakes.filter((n) => n !== number);
+  },
+  mistakeList() {
+    if (!Array.isArray(this.data.mistakes)) return [];
+    return this.data.mistakes.slice();
   },
 
   masteredCount() {
