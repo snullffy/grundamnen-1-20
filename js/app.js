@@ -105,7 +105,7 @@ const App = {
           <div class="section-title">Träna</div>
           <div class="btn-grid">
             <button class="btn btn-primary" data-go="learn"><span class="emj">📚</span><span>Lär dig<small>Korten steg för steg</small></span></button>
-            <button class="btn btn-accent" data-go="quiz"><span class="emj">⚡</span><span>Snabbquiz<small>Smart & adaptivt</small></span></button>
+            <button class="btn btn-accent" data-go="quiz"><span class="emj">⚡</span><span>Snabbquiz<small>4 delar · adaptivt</small></span></button>
             <button class="btn btn-amber" data-go="review"><span class="emj">🎯</span><span>Repetera svåra<small>Dina svaga ämnen</small></span></button>
             <button class="btn btn-green" data-go="blind"><span class="emj">✍️</span><span>Skriv allt<small>Fyll i på blindo</small></span></button>
             <button class="btn btn-purple" data-go="table"><span class="emj">📋</span><span>Fyll i tabellen<small>Göm & skriv in</small></span></button>
@@ -148,14 +148,51 @@ const App = {
       Learn.start.call(this);
     },
 
-    // ---------------- QUIZ (adaptive practice) ----------------
+    // ---------------- QUIZ (part selector) ----------------
     quiz() {
-      Quiz.startAdaptive.call(this, {
-        label: "Snabbquiz",
-        length: 12,
-        pool: Engine.allElements(),
-        showFeedback: true
-      });
+      const groups = [
+        { label: "Del 1", range: "1–5",   nums: [1, 2, 3, 4, 5] },
+        { label: "Del 2", range: "6–10",  nums: [6, 7, 8, 9, 10] },
+        { label: "Del 3", range: "11–15", nums: [11, 12, 13, 14, 15] },
+        { label: "Del 4", range: "16–20", nums: [16, 17, 18, 19, 20] }
+      ];
+      const cards = groups.map((g, i) => {
+        const syms = g.nums.map((n) => Engine.byNumber(n).symbol).join(" · ");
+        const done = g.nums.filter((n) => Store.el(n).level >= MAX_LEVEL).length;
+        return `
+          <button class="btn btn-dark" data-part="${i}">
+            <span class="emj">${done === 5 ? "✅" : "🔹"}</span>
+            <span>${g.label} <span style="color:var(--muted);font-weight:500">(${g.range})</span>
+            <small>${syms} · ${done}/5 klara</small></span>
+          </button>`;
+      }).join("");
+
+      this.html(`
+        <section class="view">
+          <header class="hero"><h1>Snabbquiz</h1><p>Välj en del att träna på – 5 grundämnen i taget.</p></header>
+          <p class="mode-desc">Smart och adaptivt: du får fler frågor på det du har svårt för. Ta en del i taget så blir det inte för mycket på en gång.</p>
+
+          <div class="section-title">Välj del</div>
+          <div class="btn-grid">${cards}</div>
+
+          <div class="spacer"></div>
+          <div class="section-title">Eller kör allt</div>
+          <button class="big-final-btn" id="allBtn">🎲 Alla 20 grundämnen</button>
+        </section>
+      `);
+
+      const start = (nums, len) => {
+        Quiz.startAdaptive.call(this, {
+          label: "Snabbquiz",
+          length: len,
+          pool: nums.map((n) => Engine.byNumber(n)),
+          showFeedback: true
+        });
+      };
+      this.root.querySelectorAll("[data-part]").forEach((b) =>
+        b.addEventListener("click", () => start(groups[+b.dataset.part].nums, 10)));
+      document.getElementById("allBtn").addEventListener("click", () =>
+        start([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], 14));
     },
 
     // ---------------- REVIEW HARD ----------------
