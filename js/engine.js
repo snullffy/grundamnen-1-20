@@ -22,16 +22,43 @@ const Engine = {
     return (str || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
   },
 
-  // Kontrollera symbol (rätt case ignoreras – "na", "NA", "Na" godkänns).
+  // Karta för sub-/superscript -> vanliga tecken.
+  _supSub: {
+    "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9",
+    "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
+    "⁺": "+", "⁻": "-"
+  },
+
+  // Normalisera en formel så att tangentbords-skrivning godkänns.
+  // "SO₄²⁻" == "so42-" == "SO4 2-" ; "H₃O⁺" == "h3o+" ; "OH⁻" == "oh-".
+  normalizeFormula(str) {
+    let s = (str || "").toString().trim();
+    s = s.split("").map((ch) => this._supSub[ch] || ch).join("");
+    s = s.toLowerCase();
+    s = s.replace(/[–—−]/g, "-");        // olika minustecken -> -
+    s = s.replace(/[＋]/g, "+");
+    s = s.replace(/[\s._·\-–—]/g, (m) => (m === "." || m === "_" || m === "·" ? "" : m)); // ta bort punkt/understreck/prick
+    s = s.replace(/\s+/g, "");            // ta bort mellanslag
+    // Tillåt laddning skriven som "-2"/"+2" i slutet -> "2-"/"2+".
+    s = s.replace(/([+-])(\d+)$/, "$2$1");
+    return s;
+  },
+
+  // Normalisera jon-namn: gemener, ta bort mellanslag/parenteser, valfritt "jon"-slut.
+  normalizeName(str) {
+    let s = (str || "").toString().trim().toLowerCase();
+    s = s.replace(/\s+/g, "");
+    s = s.replace(/[()]/g, "");
+    s = s.replace(/jon$/, "");
+    return s;
+  },
+
+  // Kontrollera formel (godkänner både unicode och vanlig text).
   checkSymbol(input, correct) {
-    return this.normalize(input) === this.normalize(correct);
+    return this.normalizeFormula(input) === this.normalizeFormula(correct);
   },
   checkName(input, correct) {
-    return this.normalize(input) === this.normalize(correct);
-  },
-  checkNumber(input, correct) {
-    const n = parseInt((input || "").toString().trim(), 10);
-    return n === correct;
+    return this.normalizeName(input) === this.normalizeName(correct);
   },
 
   // ---- Adaptivt urval av grundämne ----
@@ -70,12 +97,11 @@ const Engine = {
   },
 
   // ---- Frågetyper ----
-  // 1 symbol->namn (mc), 2 namn->symbol (mc), 3 atomnr->namn (mc),
-  // 4 namn->atomnr (typ), 5 symbol->atomnr (typ), 6 atomnr->symbol (mc/typ),
-  // 7 skriv själv (typ, symbol/namn)
-  ALL_TYPES: ["sym2name", "name2sym", "num2name", "name2num", "sym2num", "num2sym", "write"],
+  // sym2name = formel -> jon (mc), name2sym = jon -> formel (mc),
+  // write = skriv själv (formel eller jon-namn).
+  ALL_TYPES: ["sym2name", "name2sym", "write"],
 
-  // Välj frågetyp adaptivt beroende på ämnets nivå.
+  // Välj frågetyp adaptivt beroende på jonens nivå.
   pickType(el, opts) {
     opts = opts || {};
     if (opts.forceMix) return this.rand(this.ALL_TYPES);
@@ -83,9 +109,9 @@ const Engine = {
     const st = Store.el(el.number);
     const lvl = st.level;
 
-    // Låg nivå -> mest flerval. Hög nivå -> mer skriv-själv / atomnummer.
-    let mcTypes = ["sym2name", "name2sym", "num2name", "num2sym"];
-    let typeTypes = ["name2num", "sym2num", "write"];
+    // Låg nivå -> mest flerval. Hög nivå -> mer skriv-själv.
+    let mcTypes = ["sym2name", "name2sym"];
+    let typeTypes = ["write"];
 
     let pMc; // sannolikhet för flervalsfråga
     if (lvl <= 1) pMc = 0.85;
@@ -109,57 +135,31 @@ const Engine = {
 
     switch (type) {
       case "sym2name":
-        q.prompt = "Vad heter grundämnet med symbolen";
+        q.prompt = "Vilken jon har formeln";
         q.focus = el.symbol;
         q.answer = el.name;
+        q.answerKind = "name";
         q.options = distractors((e) => ({ label: e.name, value: e.name, correct: e.number === el.number }));
-        q.tag = "Symbol → namn";
+        q.tag = "Formel → jon";
         break;
       case "name2sym":
-        q.prompt = "Vilken symbol har";
+        q.prompt = "Vilken formel har";
         q.focus = el.name;
         q.answer = el.symbol;
+        q.answerKind = "formula";
         q.options = distractors((e) => ({ label: e.symbol, value: e.symbol, correct: e.number === el.number }));
-        q.tag = "Namn → symbol";
-        break;
-      case "num2name":
-        q.prompt = "Vilket grundämne har atomnummer";
-        q.focus = String(el.number);
-        q.answer = el.name;
-        q.options = distractors((e) => ({ label: e.name, value: e.name, correct: e.number === el.number }));
-        q.tag = "Atomnummer → namn";
-        break;
-      case "num2sym":
-        q.prompt = "Vilken symbol har grundämne nummer";
-        q.focus = String(el.number);
-        q.answer = el.symbol;
-        q.options = distractors((e) => ({ label: e.symbol, value: e.symbol, correct: e.number === el.number }));
-        q.tag = "Atomnummer → symbol";
-        break;
-      case "name2num":
-        q.prompt = "Vilket atomnummer har";
-        q.focus = el.name;
-        q.answer = String(el.number);
-        q.inputType = "number";
-        q.tag = "Namn → atomnummer";
-        break;
-      case "sym2num":
-        q.prompt = "Vilket atomnummer har";
-        q.focus = el.symbol;
-        q.answer = String(el.number);
-        q.inputType = "number";
-        q.tag = "Symbol → atomnummer";
+        q.tag = "Jon → formel";
         break;
       case "write":
-        // Skriv själv – slumpa mellan symbol och namn.
-        if (Math.random() < 0.5) {
-          q.prompt = "Vilken symbol har";
+        // Skriv själv – slumpa mellan att skriva formeln eller namnet.
+        if (Math.random() < 0.6) {
+          q.prompt = "Skriv formeln för";
           q.focus = el.name;
           q.answer = el.symbol;
           q.inputType = "text";
-          q.checkKind = "symbol";
+          q.checkKind = "formula";
         } else {
-          q.prompt = "Vad heter grundämnet";
+          q.prompt = "Vilken jon har formeln";
           q.focus = el.symbol;
           q.answer = el.name;
           q.inputType = "text";
@@ -173,14 +173,13 @@ const Engine = {
 
   // Kontrollera ett svar mot en fråga.
   checkAnswer(q, given) {
-    if (q.type === "name2num" || q.type === "sym2num") {
-      return this.checkNumber(given, q.element.number);
-    }
     if (q.type === "write") {
-      if (q.checkKind === "symbol") return this.checkSymbol(given, q.element.symbol);
+      if (q.checkKind === "formula") return this.checkSymbol(given, q.element.symbol);
       return this.checkName(given, q.element.name);
     }
     // flerval
+    if (q.answerKind === "formula") return this.checkSymbol(given, q.answer);
+    if (q.answerKind === "name") return this.checkName(given, q.answer);
     return this.normalize(given) === this.normalize(q.answer);
   },
 
@@ -309,7 +308,7 @@ const Engine = {
     tryUnlock("streak10", Store.data.bestStreak >= 10);
     tryUnlock("streak20", Store.data.bestStreak >= 20);
     tryUnlock("master5", Store.masteredCount() >= 5);
-    tryUnlock("master_all", Store.masteredCount() >= 20);
+    tryUnlock("master_all", Store.masteredCount() >= TOTAL);
     tryUnlock("perfect", ctx.perfect);
     tryUnlock("know_all", ctx.knowAll);
     return unlocked.map((id) => ACHIEVEMENTS.find((a) => a.id === id));

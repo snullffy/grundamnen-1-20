@@ -1,5 +1,5 @@
 // Persistens i localStorage. All data sparas lokalt – inget konto behövs.
-const STORAGE_KEY = "grundamnen_app_v1";
+const STORAGE_KEY = "joner_app_v1";
 
 const Store = {
   data: null,

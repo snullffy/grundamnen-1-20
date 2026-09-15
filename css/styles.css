@@ -260,8 +260,8 @@ main { max-width: var(--maxw); margin: 0 auto; padding: clamp(18px,4vw,32px) var
 }
 .el-card .num { position: absolute; top: clamp(14px,3vw,20px); left: clamp(16px,4vw,22px); font-size: clamp(20px,5vw,28px); font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .el-card .num-r { position: absolute; top: clamp(16px,4vw,22px); right: clamp(16px,4vw,22px); font-size: 13px; color: var(--faint); }
-.el-card .sym { font-size: clamp(76px, 24vw, 116px); font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
-.el-card .name { font-size: clamp(20px,5vw,28px); font-weight: 600; margin-top: 6px; letter-spacing: .01em; }
+.el-card .sym { font-size: clamp(52px, 17vw, 92px); font-weight: 700; line-height: 1; letter-spacing: -0.01em; max-width: 100%; overflow-wrap: anywhere; }
+.el-card .name { font-size: clamp(18px,4.5vw,26px); font-weight: 600; margin-top: 8px; letter-spacing: .01em; text-align: center; }
 
 .hint-box { max-width: 380px; margin: 16px auto 0; background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--r); padding: 14px 16px; font-size: 14px; color: var(--muted); }
 .hint-box b { color: var(--text); font-weight: 600; }
@@ -284,7 +284,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: clamp(18px,4vw,32px) var
 
 .question-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg); padding: clamp(24px,5vw,40px) clamp(16px,4vw,26px); text-align: center; margin-bottom: 18px; box-shadow: var(--shadow-xs); }
 .question-card .q-prompt { font-size: clamp(15px,2.2vw,17px); color: var(--muted); margin-bottom: 12px; }
-.question-card .q-focus { font-size: clamp(48px, 15vw, 96px); font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+.question-card .q-focus { font-size: clamp(38px, 11vw, 72px); font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .question-card .q-sub { font-size: 14px; color: var(--muted); margin-top: 8px; }
 
 .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -392,7 +392,7 @@ main { max-width: var(--maxw); margin: 0 auto; padding: clamp(18px,4vw,32px) var
 
 .hard-list { display: grid; gap: 8px; }
 .hard-row { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 14px; box-shadow: var(--shadow-xs); }
-.hard-row .hs { font-size: 20px; font-weight: 700; width: 42px; letter-spacing: -0.02em; }
+.hard-row .hs { font-size: 18px; font-weight: 700; min-width: 52px; letter-spacing: -0.01em; }
 .hard-row .hn { flex: 1; font-weight: 500; }
 .hard-row .hstars { font-size: 13px; }
 .hard-row .ra { font-weight: 700; }

@@ -5,19 +5,11 @@
 
 // ---------- Delad frågekort-renderare ----------
 function renderQuestionCard(q) {
-  let focusHtml = `<div class="q-focus">${q.focus}</div>`;
-  let prompt = q.prompt;
-  // Snygg formulering
-  let sub = "";
-  if (q.type === "num2name" || q.type === "num2sym") {
-    prompt = q.prompt; // "... atomnummer" / "... nummer"
-  }
   return `
     <div class="q-type-tag">${q.tag}</div>
     <div class="question-card">
-      <div class="q-prompt">${prompt}</div>
-      ${focusHtml}
-      <div class="q-sub">${sub}</div>
+      <div class="q-prompt">${q.prompt}</div>
+      <div class="q-focus">${q.focus}</div>
     </div>`;
 }
 
@@ -44,9 +36,9 @@ function renderAnswerArea(q, container, onAnswer) {
     wrap.className = "type-answer";
     const input = document.createElement("input");
     input.className = "type-input";
-    input.type = q.inputType === "number" ? "number" : "text";
-    input.inputMode = q.inputType === "number" ? "numeric" : "text";
-    input.placeholder = q.inputType === "number" ? "Skriv ett nummer" : "Skriv ditt svar";
+    input.type = "text";
+    input.inputMode = "text";
+    input.placeholder = q.checkKind === "formula" ? "t.ex. SO4 2-" : "Skriv jonens namn";
     input.autocomplete = "off";
     input.autocapitalize = "off";
     input.spellcheck = false;
@@ -107,12 +99,11 @@ const Learn = {
           <div class="progress"><span style="width:${pct}%"></span></div>
         </div>
         <div class="el-card">
-          <div class="num">${el.number}</div>
           <div class="num-r">${Learn.starText(st.level)}</div>
           <div class="sym">${el.symbol}</div>
           <div class="name">${el.name}</div>
         </div>
-        <div class="hint-box"><b>${el.symbol} → ${el.name}</b><br>${el.hint}</div>
+        <div class="hint-box"><b>${el.name} = ${el.symbol}</b>${el.hint ? "<br>" + el.hint : ""}</div>
         <div class="learn-actions">
           <button class="btn btn-amber" id="hard"><span class="emj">📌</span><span>Behöver träna mer</span></button>
           <button class="btn btn-green" id="know"><span class="emj">✅</span><span>Jag kan den</span></button>
@@ -247,12 +238,12 @@ const Quiz = {
     fb.innerHTML = correct ? `
       <div class="feedback ok">
         <div class="fb-title">✅ Rätt!</div>
-        <div class="fb-body"><b>${el.symbol} = ${el.name}</b> · atomnummer ${el.number}</div>
+        <div class="fb-body"><b>${el.name} = ${el.symbol}</b></div>
       </div>` : `
       <div class="feedback no">
         <div class="fb-title">❌ Inte riktigt</div>
-        <div class="fb-body">Du svarade: <b>${given}</b><br>Rätt svar är: <b>${el.symbol} = ${el.name}</b> (nr ${el.number})</div>
-        <div class="fb-remember">Kom ihåg: <b>${el.symbol} → ${el.name}</b>. ${el.hint}</div>
+        <div class="fb-body">Du svarade: <b>${given}</b><br>Rätt svar är: <b>${el.name} = ${el.symbol}</b></div>
+        <div class="fb-remember">Kom ihåg: <b>${el.name} → ${el.symbol}</b>.${el.hint ? " " + el.hint : ""}</div>
       </div>`;
 
     const nextBtn = document.createElement("button");
@@ -330,10 +321,10 @@ const Blind = {
     app.html(`
       <section class="view center-col">
         <div class="hero"><h1>✍️ Skriv allt</h1></div>
-        <p class="mode-desc">Du ser <b>en</b> uppgift (t.ex. namnet) och skriver de andra två själv – helt på blindo.<br>Ser du <b>Väte</b> skriver du symbol <b>H</b> och atomnummer <b>1</b>. Och tvärtom.</p>
+        <p class="mode-desc">Du ser <b>en</b> sida och skriver den andra själv – helt på blindo.<br>Ser du <b>Sulfatjon</b> skriver du formeln <b>SO4 2-</b>. Ser du <b>SO₄²⁻</b> skriver du <b>Sulfatjon</b>.</p>
         <div class="pill-row" id="blLen">
-          <button class="pill active" data-len="10">10 ämnen</button>
-          <button class="pill" data-len="20">Alla 20</button>
+          <button class="pill active" data-len="10">10 joner</button>
+          <button class="pill" data-len="28">Alla 28</button>
         </div>
         <button class="btn btn-green btn-block" id="blStart">✍️ Starta</button>
         <div class="spacer"></div>
@@ -369,32 +360,25 @@ const Blind = {
       return;
     }
     const el = b.list[b.index];
-    // Slumpa vilken sida som visas: 0=namn, 1=symbol, 2=nummer.
-    const show = Math.floor(Math.random() * 3);
+    // Slumpa vilken sida som visas: namn -> skriv formel, eller formel -> skriv namn.
+    const showName = Math.random() < 0.5;
     const pct = Math.round((b.index / b.list.length) * 100);
 
     let shownLabel, shownValue, fields;
-    if (show === 0) {
-      shownLabel = "Namn"; shownValue = el.name;
-      fields = [{ key: "symbol", label: "Symbol", answer: el.symbol, type: "text" },
-                { key: "number", label: "Atomnummer", answer: String(el.number), type: "number" }];
-    } else if (show === 1) {
-      shownLabel = "Symbol"; shownValue = el.symbol;
-      fields = [{ key: "name", label: "Namn", answer: el.name, type: "text" },
-                { key: "number", label: "Atomnummer", answer: String(el.number), type: "number" }];
+    if (showName) {
+      shownLabel = "Jon (namn)"; shownValue = el.name;
+      fields = [{ key: "symbol", label: "Formel", answer: el.symbol, placeholder: "t.ex. SO4 2-" }];
     } else {
-      shownLabel = "Atomnummer"; shownValue = String(el.number);
-      fields = [{ key: "symbol", label: "Symbol", answer: el.symbol, type: "text" },
-                { key: "name", label: "Namn", answer: el.name, type: "text" }];
+      shownLabel = "Formel"; shownValue = el.symbol;
+      fields = [{ key: "name", label: "Jon (namn)", answer: el.name, placeholder: "Skriv jonens namn" }];
     }
 
     const fieldHtml = fields.map((f, i) => `
       <div class="field-row">
         <label>${f.label}</label>
-        <input data-i="${i}" type="${f.type === "number" ? "number" : "text"}"
-               inputmode="${f.type === "number" ? "numeric" : "text"}"
+        <input data-i="${i}" type="text" inputmode="text"
                autocomplete="off" autocapitalize="off" spellcheck="false"
-               placeholder="Skriv ${f.label.toLowerCase()}" />
+               placeholder="${f.placeholder}" />
         <div class="sol" data-sol="${i}"></div>
       </div>`).join("");
 
@@ -439,8 +423,7 @@ const Blind = {
       fields.forEach((f, i) => {
         const inp = inputs[i];
         let ok;
-        if (f.type === "number") ok = Engine.checkNumber(inp.value, el.number);
-        else if (f.key === "symbol") ok = Engine.checkSymbol(inp.value, f.answer);
+        if (f.key === "symbol") ok = Engine.checkSymbol(inp.value, f.answer);
         else ok = Engine.checkName(inp.value, f.answer);
         inp.disabled = true;
         inp.classList.add(ok ? "correct" : "wrong");
@@ -456,17 +439,17 @@ const Blind = {
       if (allCorrect) b.score++;
       b.results.push({
         element: el, tag: "Skriv allt", prompt: shownLabel, focus: shownValue,
-        given: givenParts.join(" / "), answer: `${el.symbol} · ${el.name} · ${el.number}`, correct: allCorrect
+        given: givenParts.join(" / "), answer: `${el.name} = ${el.symbol}`, correct: allCorrect
       });
       app.applyAnswer({ element: el }, allCorrect, true);
 
       const fb = document.getElementById("fb");
       fb.innerHTML = allCorrect ? `
-        <div class="feedback ok"><div class="fb-title">✅ Helt rätt!</div>
-        <div class="fb-body"><b>${el.symbol} = ${el.name}</b> · atomnummer ${el.number}</div></div>` : `
-        <div class="feedback no"><div class="fb-title">❌ Inte helt rätt</div>
-        <div class="fb-body">Rätt svar: <b>${el.symbol} = ${el.name}</b> · atomnummer <b>${el.number}</b></div>
-        <div class="fb-remember">${el.hint}</div></div>`;
+        <div class="feedback ok"><div class="fb-title">✅ Rätt!</div>
+        <div class="fb-body"><b>${el.name} = ${el.symbol}</b></div></div>` : `
+        <div class="feedback no"><div class="fb-title">❌ Inte rätt</div>
+        <div class="fb-body">Rätt svar: <b>${el.name} = ${el.symbol}</b></div>
+        ${el.hint ? `<div class="fb-remember">${el.hint}</div>` : ""}</div>`;
       const next = document.createElement("button");
       next.className = "btn btn-primary btn-block";
       next.style.marginTop = "14px";
@@ -485,9 +468,9 @@ const Blind = {
 const Table = {
   start() {
     const app = this;
-    // Behåll ev. tidigare inställningar, annars göm symbol som standard.
+    // Behåll ev. tidigare inställningar, annars göm formeln som standard.
     app.tableState = app.tableState || {
-      hide: { name: false, symbol: true, number: false },
+      hide: { name: false, symbol: true },
       shuffled: false
     };
     Table.build.call(app);
@@ -506,18 +489,17 @@ const Table = {
     const pill = (field, label) =>
       `<button class="pill ${s.hide[field] ? "active" : ""}" data-hide="${field}">🙈 ${label}</button>`;
 
-    const anyHidden = s.hide.name || s.hide.symbol || s.hide.number;
+    const anyHidden = s.hide.name || s.hide.symbol;
 
     app.html(`
       <section class="view">
         <div class="hero" style="padding-bottom:2px;"><h1>📋 Fyll i tabellen</h1></div>
-        <p class="hide-hint">Välj vad som ska gömmas – skriv sedan in det som saknas och tryck <b>Rätta</b>.</p>
+        <p class="hide-hint">Välj vad som ska gömmas – skriv sedan in det som saknas och tryck <b>Rätta</b>. Formler kan skrivas som t.ex. <b>SO4 2-</b> eller <b>H3O+</b>.</p>
 
         <div class="tbl-toolbar">
           <div class="pill-row">
-            ${pill("name", "Göm namn")}
-            ${pill("symbol", "Göm symbol")}
-            ${pill("number", "Göm atomnr")}
+            ${pill("name", "Göm jon")}
+            ${pill("symbol", "Göm formel")}
           </div>
           <div class="pill-row">
             <button class="pill" id="tblShuffle">🔀 Blanda</button>
@@ -527,7 +509,7 @@ const Table = {
           <button class="btn btn-green btn-block" id="tblCheck" ${anyHidden ? "" : "disabled style=\"opacity:.5\""}>✅ Rätta</button>
         </div>
 
-        <div class="tbl-head"><span></span><span>Namn</span><span>Symbol</span><span>Atomnr</span></div>
+        <div class="tbl-head"><span></span><span>Jon</span><span>Formel</span></div>
         <div class="tbl" id="tblBody">${Table.rowsHtml.call(app)}</div>
         <div class="spacer"></div>
         <button class="btn btn-dark btn-block" id="tblHome">🏠 Till start</button>
@@ -574,17 +556,16 @@ const Table = {
       const cell = (field) => {
         if (!s.hide[field]) {
           if (field === "name") return `<div class="cell name-cell">${el.name}</div>`;
-          if (field === "symbol") return `<div class="cell">${el.symbol}</div>`;
-          return `<div class="cell">${el.number}</div>`;
+          return `<div class="cell">${el.symbol}</div>`;
         }
-        const numeric = field === "number";
+        const ph = field === "symbol" ? "formel" : "jon";
         return `<input class="cell-input" data-num="${el.number}" data-field="${field}"
-                  type="${numeric ? "number" : "text"}" inputmode="${numeric ? "numeric" : "text"}"
+                  type="text" inputmode="text" placeholder="${ph}"
                   autocomplete="off" autocapitalize="off" spellcheck="false" />`;
       };
       return `<div class="tbl-row" data-num="${el.number}">
         <div class="rownum">${el.number}</div>
-        ${cell("name")}${cell("symbol")}${cell("number")}
+        ${cell("name")}${cell("symbol")}
       </div>`;
     }).join("");
   },
@@ -603,8 +584,7 @@ const Table = {
       inputs.forEach((inp) => {
         const field = inp.dataset.field;
         let ok;
-        if (field === "number") ok = Engine.checkNumber(inp.value, el.number);
-        else if (field === "symbol") ok = Engine.checkSymbol(inp.value, el.symbol);
+        if (field === "symbol") ok = Engine.checkSymbol(inp.value, el.symbol);
         else ok = Engine.checkName(inp.value, el.name);
 
         if (inp.value.trim() === "") allFilled = false;
@@ -658,8 +638,8 @@ const Table = {
 // ==========================================================================
 const FinalTest = {
   build() {
-    // Täck alla 20 ämnen, och alla fyra krävda frågetyper jämnt fördelat.
-    const types = ["sym2name", "name2sym", "num2name", "name2num"];
+    // Täck alla joner åt båda hållen: formel -> jon och jon -> formel.
+    const types = ["sym2name", "name2sym"];
     const qs = ELEMENTS.map((el, i) => Engine.buildQuestion(el, types[i % types.length]));
     return Engine.shuffle(qs);
   }
@@ -709,14 +689,14 @@ const Results = {
         knowAll = true;
         finalBanner = `
           <div class="feedback ok" style="text-align:center;">
-            <div class="fb-title" style="font-size:26px;">🎉 DU KAN ALLA 20!</div>
+            <div class="fb-title" style="font-size:26px;">🎉 DU KAN ALLA ${TOTAL}!</div>
             <div class="fb-body">Du är redo för läxförhöret. Snyggt jobbat!</div>
           </div>`;
       } else {
         finalBanner = `
           <div class="feedback no" style="text-align:center;">
             <div class="fb-title">Nästan där!</div>
-            <div class="fb-body">Du behöver minst 18/20. Träna lite till på dina svaga ämnen och testa igen. 💪</div>
+            <div class="fb-body">Du behöver minst 90 %. Träna lite till på dina svaga joner och testa igen. 💪</div>
           </div>`;
       }
     }
@@ -749,14 +729,14 @@ const Results = {
             <div class="review-row">
               <span class="rmark">${r.correct ? "✅" : "❌"}</span>
               <span class="rq">${r.tag}: ${r.focus}</span>
-              <span class="ra">${r.element.symbol}=${r.element.name} (${r.element.number})</span>
+              <span class="ra">${r.element.name} = ${r.element.symbol}</span>
             </div>`).join("")
         }</div>
 
         <div class="spacer"></div>
         <div style="display:grid;gap:12px;">
           ${Store.mistakeList().length ? `<button class="btn btn-solid btn-block" id="doMiss">🔁 Gör om felen (${Store.mistakeList().length})</button>` : ""}
-          ${trainNames.length ? `<button class="btn btn-block" id="trainWeak">🎯 Träna på mina svaga ämnen</button>` : ""}
+          ${trainNames.length ? `<button class="btn btn-block" id="trainWeak">🎯 Träna på mina svaga joner</button>` : ""}
           <button class="btn btn-block" id="again">↻ Kör igen</button>
           <button class="btn btn-block" id="home2">🏠 Till start</button>
         </div>
@@ -775,7 +755,7 @@ const Results = {
     document.getElementById("again").addEventListener("click", () => {
       // Kör samma läge igen om möjligt.
       const map = { "Snabbquiz": "quiz", "Repetera svåra": "review", "Prov imorgon": "examtomorrow",
-                    "Snabbtest": "quicktest", "Prov-simulering": "examsim", "Kan jag alla 20": "finaltest",
+                    "Snabbtest": "quicktest", "Prov-simulering": "examsim", "Sluttest": "finaltest",
                     "Skriv allt": "blind", "Gör om fel": "mistakes" };
       app.go(map[label] || "home");
     });
@@ -800,7 +780,7 @@ const Progress = {
     const app = this;
     const d = Store.data;
     const mastered = Store.masteredCount();
-    const pct = Math.round((mastered / 20) * 100);
+    const pct = Math.round((mastered / TOTAL) * 100);
     const hardest = Engine.weakestElements(5);
 
     const achHtml = ACHIEVEMENTS.map((a) => {
@@ -816,7 +796,7 @@ const Progress = {
       const st = Store.el(e.number);
       return `<div class="hard-row">
         <span class="hs">${e.symbol}</span>
-        <span class="hn">${e.name} <span style="color:var(--muted);font-size:12px">#${e.number}</span></span>
+        <span class="hn">${e.name}</span>
         <span class="hstars">${app.stars(st.level)}</span>
       </div>`;
     }).join("");
@@ -832,7 +812,7 @@ const Progress = {
         <div class="hero"><h1>Min utveckling</h1></div>
 
         <div class="mastery-card">
-          <div class="row"><h3>Behärskade grundämnen</h3><span class="count">${mastered}/20</span></div>
+          <div class="row"><h3>Behärskade joner</h3><span class="count">${mastered}/${TOTAL}</span></div>
           <div class="progress"><span style="width:${pct}%"></span></div>
         </div>
 
@@ -848,14 +828,14 @@ const Progress = {
         <div class="section-title">Märken</div>
         <div class="ach-grid">${achHtml}</div>
 
-        <div class="section-title">Svåraste grundämnen</div>
+        <div class="section-title">Svåraste joner</div>
         <div class="hard-list">${hardHtml}</div>
 
         <div class="section-title">Senaste resultat</div>
         <div class="hard-list">${resultsHtml}</div>
 
         <div class="spacer"></div>
-        <button class="btn btn-amber btn-block" id="pTrain">🎯 Träna på mina svaga ämnen</button>
+        <button class="btn btn-amber btn-block" id="pTrain">🎯 Träna på mina svaga joner</button>
       </section>
     `);
     document.getElementById("pTrain").addEventListener("click", () => app.go("review"));

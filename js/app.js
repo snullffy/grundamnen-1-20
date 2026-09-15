@@ -66,7 +66,7 @@ const App = {
     home() {
       const d = Store.data;
       const mastered = Store.masteredCount();
-      const pct = Math.round((mastered / 20) * 100);
+      const pct = Math.round((mastered / TOTAL) * 100);
       const xpFloor = Engine.xpForLevel(d.level);
       const xpNext = Engine.xpForLevel(d.level + 1);
       const xpPct = Math.min(100, Math.round(((d.xp - xpFloor) / (xpNext - xpFloor)) * 100));
@@ -75,20 +75,20 @@ const App = {
       this.html(`
         <section class="view">
           <header class="home-hero">
-            <span class="badge">Periodiska systemet 1–20</span>
-            <h1>Grundämnen</h1>
-            <p>Träna smart inför läxförhöret 🧪</p>
+            <span class="badge">Kemi · Viktiga joner</span>
+            <h1>Joner</h1>
+            <p>Träna namn ↔ formel inför läxförhöret 🧪</p>
           </header>
 
           <div class="stat-grid">
-            <div class="stat"><div class="big">${mastered}/20</div><div class="lbl">Kan</div></div>
+            <div class="stat"><div class="big">${mastered}/${TOTAL}</div><div class="lbl">Kan</div></div>
             <div class="stat"><div class="big">🔥 ${this.currentStreak}</div><div class="lbl">Streak</div></div>
             <div class="stat"><div class="big">${d.xp}</div><div class="lbl">XP</div></div>
             <div class="stat"><div class="big">Nivå ${d.level}</div><div class="lbl">Nivå</div></div>
           </div>
 
           <div class="mastery-card">
-            <div class="row"><h3>Din progress</h3><span class="count">${mastered}/20</span></div>
+            <div class="row"><h3>Din progress</h3><span class="count">${mastered}/${TOTAL}</span></div>
             <div class="progress"><span style="width:${pct}%"></span></div>
             <div class="row" style="margin:14px 0 6px;">
               <span class="sub">Nivå ${d.level} · ${d.xp} XP</span>
@@ -106,7 +106,7 @@ const App = {
           <div class="btn-grid">
             <button class="btn btn-primary" data-go="learn"><span class="emj">📚</span><span>Lär dig<small>Korten steg för steg</small></span></button>
             <button class="btn btn-accent" data-go="quiz"><span class="emj">⚡</span><span>Snabbquiz<small>4 delar · adaptivt</small></span></button>
-            <button class="btn btn-amber" data-go="review"><span class="emj">🎯</span><span>Repetera svåra<small>Dina svaga ämnen</small></span></button>
+            <button class="btn btn-amber" data-go="review"><span class="emj">🎯</span><span>Repetera svåra<small>Dina svaga joner</small></span></button>
             <button class="btn btn-red" data-go="mistakes"><span class="emj">🔁</span><span>Gör om fel<small>${Store.mistakeList().length ? Store.mistakeList().length + " att träna om" : "Inga fel just nu"}</small></span></button>
             <button class="btn btn-green" data-go="blind"><span class="emj">✍️</span><span>Skriv allt<small>Fyll i på blindo</small></span></button>
             <button class="btn btn-purple" data-go="table"><span class="emj">📋</span><span>Fyll i tabellen<small>Göm & skriv in</small></span></button>
@@ -116,12 +116,12 @@ const App = {
           <div class="section-title">Testa & följ</div>
           <div class="btn-grid">
             <button class="btn btn-dark" data-go="examsim"><span class="emj">🎓</span><span>Prov-simulering<small>Som ett riktigt prov</small></span></button>
-            <button class="btn btn-dark" data-go="list"><span class="emj">🔬</span><span>Alla grundämnen<small>Se alla 20</small></span></button>
+            <button class="btn btn-dark" data-go="list"><span class="emj">🔬</span><span>Alla joner<small>Se alla ${TOTAL}</small></span></button>
             <button class="btn btn-dark" data-go="progress"><span class="emj">📈</span><span>Min utveckling<small>Statistik & märken</small></span></button>
           </div>
 
           <div class="spacer"></div>
-          <button class="big-final-btn" id="finalBtn"><span>🧠</span><span>Kan jag alla 20?</span></button>
+          <button class="big-final-btn" id="finalBtn"><span>🧠</span><span>Kan jag alla ${TOTAL}?</span></button>
 
           <div class="last-result">
             ${last ? `Senaste: <b>${last.label}</b> · ${last.score}/${last.total} (${last.pct}%)` : "Inget resultat än – kör ditt första pass! 🚀"}
@@ -152,25 +152,25 @@ const App = {
     // ---------------- QUIZ (part selector) ----------------
     quiz() {
       const groups = [
-        { label: "Del 1", range: "1–5",   nums: [1, 2, 3, 4, 5] },
-        { label: "Del 2", range: "6–10",  nums: [6, 7, 8, 9, 10] },
-        { label: "Del 3", range: "11–15", nums: [11, 12, 13, 14, 15] },
-        { label: "Del 4", range: "16–20", nums: [16, 17, 18, 19, 20] }
+        { label: "Del 1", nums: [1, 2, 3, 4, 5, 6, 7] },
+        { label: "Del 2", nums: [8, 9, 10, 11, 12, 13, 14] },
+        { label: "Del 3", nums: [15, 16, 17, 18, 19, 20, 21] },
+        { label: "Del 4", nums: [22, 23, 24, 25, 26, 27, 28] }
       ];
       const cards = groups.map((g, i) => {
         const syms = g.nums.map((n) => Engine.byNumber(n).symbol).join(" · ");
         const done = g.nums.filter((n) => Store.el(n).level >= MAX_LEVEL).length;
         return `
           <button class="btn btn-dark" data-part="${i}">
-            <span class="emj">${done === 5 ? "✅" : "🔹"}</span>
-            <span>${g.label} <span style="color:var(--muted);font-weight:500">(${g.range})</span>
-            <small>${syms} · ${done}/5 klara</small></span>
+            <span class="emj">${done === g.nums.length ? "✅" : "🔹"}</span>
+            <span>${g.label}
+            <small>${syms} · ${done}/${g.nums.length} klara</small></span>
           </button>`;
       }).join("");
 
       this.html(`
         <section class="view">
-          <header class="hero"><h1>Snabbquiz</h1><p>Välj en del att träna på – 5 grundämnen i taget.</p></header>
+          <header class="hero"><h1>Snabbquiz</h1><p>Välj en del att träna på – 7 joner i taget.</p></header>
           <p class="mode-desc">Smart och adaptivt: du får fler frågor på det du har svårt för. Ta en del i taget så blir det inte för mycket på en gång.</p>
 
           <div class="section-title">Välj del</div>
@@ -178,7 +178,7 @@ const App = {
 
           <div class="spacer"></div>
           <div class="section-title">Eller kör allt</div>
-          <button class="big-final-btn" id="allBtn">🎲 Alla 20 grundämnen</button>
+          <button class="big-final-btn" id="allBtn">🎲 Alla ${TOTAL} joner</button>
         </section>
       `);
 
@@ -191,9 +191,9 @@ const App = {
         });
       };
       this.root.querySelectorAll("[data-part]").forEach((b) =>
-        b.addEventListener("click", () => start(groups[+b.dataset.part].nums, 10)));
+        b.addEventListener("click", () => start(groups[+b.dataset.part].nums, 12)));
       document.getElementById("allBtn").addEventListener("click", () =>
-        start([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], 14));
+        start(ELEMENTS.map((e) => e.number), 18));
     },
 
     // ---------------- REVIEW HARD ----------------
@@ -220,19 +220,19 @@ const App = {
             <header class="hero"><h1>Gör om fel</h1><p>Här samlas allt du svarar fel på.</p></header>
             <div class="feedback ok" style="text-align:center;margin-top:10px;">
               <div class="fb-title">🎉 Inga fel just nu!</div>
-              <div class="fb-body">Du har inga grundämnen i fel-listan. Kör ett quiz så dyker det du missar upp här automatiskt.</div>
+              <div class="fb-body">Du har inga joner i fel-listan. Kör ett quiz så dyker det du missar upp här automatiskt.</div>
             </div>
             <div class="spacer"></div>
             <div style="display:grid;gap:12px;">
               <button class="btn btn-solid btn-block" data-go="quiz">⚡ Kör ett quiz</button>
-              <button class="btn btn-block" id="allBtn2">🎲 Gör alla 20</button>
+              <button class="btn btn-block" id="allBtn2">🎲 Gör alla ${TOTAL}</button>
               <button class="btn btn-block" data-go="home">🏠 Till start</button>
             </div>
           </section>`);
         this.root.querySelectorAll("[data-go]").forEach((b) =>
           b.addEventListener("click", () => this.go(b.dataset.go)));
         document.getElementById("allBtn2").addEventListener("click", () =>
-          Quiz.startAdaptive.call(this, { label: "Snabbquiz", length: 14, pool: Engine.allElements(), showFeedback: true }));
+          Quiz.startAdaptive.call(this, { label: "Snabbquiz", length: 16, pool: Engine.allElements(), showFeedback: true }));
         return;
       }
 
@@ -243,8 +243,8 @@ const App = {
 
       this.html(`
         <section class="view">
-          <header class="hero"><h1>Gör om fel</h1><p>${list.length} grundämne${list.length === 1 ? "" : "n"} du har haft fel på.</p></header>
-          <p class="mode-desc">Smart repetition: appen tränar just det du missat tills du kan det. När du svarar rätt försvinner ämnet härifrån automatiskt. Allt sparas lokalt i din webbläsare.</p>
+          <header class="hero"><h1>Gör om fel</h1><p>${list.length} jon${list.length === 1 ? "" : "er"} du har haft fel på.</p></header>
+          <p class="mode-desc">Smart repetition: appen tränar just det du missat tills du kan det. När du svarar rätt försvinner jonen härifrån automatiskt. Allt sparas lokalt i din webbläsare.</p>
 
           <div class="section-title">Dina fel</div>
           <div class="miss-list">${chips}</div>
@@ -252,7 +252,7 @@ const App = {
           <div class="spacer"></div>
           <div style="display:grid;gap:12px;">
             <button class="big-final-btn" id="doMistakes">🔁 Träna på mina fel (${list.length})</button>
-            <button class="btn btn-block" id="allBtn2">🎲 Gör alla 20 istället</button>
+            <button class="btn btn-block" id="allBtn2">🎲 Gör alla ${TOTAL} istället</button>
             <button class="btn btn-block" id="clearMiss">🧹 Rensa fel-listan</button>
           </div>
         </section>
@@ -268,7 +268,7 @@ const App = {
         });
       });
       document.getElementById("allBtn2").addEventListener("click", () =>
-        Quiz.startAdaptive.call(this, { label: "Snabbquiz", length: 14, pool: Engine.allElements(), showFeedback: true }));
+        Quiz.startAdaptive.call(this, { label: "Snabbquiz", length: 18, pool: Engine.allElements(), showFeedback: true }));
       document.getElementById("clearMiss").addEventListener("click", () => {
         if (confirm("Rensa listan med fel?")) { Store.data.mistakes = []; Store.save(); this.go("mistakes"); }
       });
@@ -277,10 +277,10 @@ const App = {
     // ---------------- EXAM TOMORROW ----------------
     examtomorrow() {
       // Optimerat pass: börja med de sämsta, blanda frågetyper.
-      const weak = Engine.weakestElements(20);
+      const weak = Engine.weakestElements(TOTAL);
       Quiz.startAdaptive.call(this, {
         label: "Prov imorgon",
-        length: 18,
+        length: 20,
         pool: weak,
         showFeedback: true,
         forceMix: true,
@@ -295,7 +295,6 @@ const App = {
         const pct = Math.round((st.level / MAX_LEVEL) * 100);
         return `
           <div class="el-tile">
-            <div class="t-num">#${e.number}</div>
             <div class="t-sym">${e.symbol}</div>
             <div class="t-name">${e.name}</div>
             <div class="t-stars">${this.stars(st.level)}</div>
@@ -304,7 +303,7 @@ const App = {
       }).join("");
       this.html(`
         <section class="view">
-          <div class="hero"><h1>Alla grundämnen</h1><p>De 20 första i periodiska systemet</p></div>
+          <div class="hero"><h1>Alla joner</h1><p>De ${TOTAL} viktiga jonerna</p></div>
           <div class="el-list">${tiles}</div>
           <div class="spacer"></div>
           <button class="btn btn-primary btn-block" data-go="learn">📚 Lär dig korten</button>
@@ -358,7 +357,7 @@ const App = {
       this.html(`
         <section class="view center-col">
           <div class="hero"><h1>Prov-simulering</h1></div>
-          <p class="mode-desc">Känns som ett riktigt läxförhör.<br>20 slumpmässiga frågor. Ingen feedback förrän på slutet – sedan får du ett betyg.</p>
+          <p class="mode-desc">Känns som ett riktigt läxförhör.<br>20 slumpmässiga frågor om jonerna. Ingen feedback förrän på slutet – sedan får du ett betyg.</p>
           <button class="btn btn-primary btn-block" id="esStart">🎓 Starta provet</button>
           <div class="spacer"></div>
         </section>
@@ -376,15 +375,15 @@ const App = {
     finaltest() {
       this.html(`
         <section class="view center-col">
-          <div class="hero"><h1>🧠 Kan jag alla 20?</h1></div>
-          <p class="mode-desc">Sluttestet. Du måste visa att du kan alla 20 åt båda hållen:<br>namn → symbol, symbol → namn, namn → atomnummer och atomnummer → namn.<br><b>Klara minst 18 av 20 för att bli godkänd.</b></p>
+          <div class="hero"><h1>🧠 Kan jag alla ${TOTAL}?</h1></div>
+          <p class="mode-desc">Sluttestet. Du måste visa att du kan alla ${TOTAL} jonerna åt båda hållen:<br>jon → formel och formel → jon.<br><b>Klara minst 90 % för att bli godkänd.</b></p>
           <button class="big-final-btn" id="ftStart"><span>🚀</span><span>STARTA SLUTTESTET</span></button>
           <div class="spacer"></div>
         </section>
       `);
       document.getElementById("ftStart").addEventListener("click", () => {
         Quiz.startTest.call(this, {
-          label: "Kan jag alla 20",
+          label: "Sluttest",
           questions: FinalTest.build(),
           grade: false,
           isFinal: true
@@ -430,7 +429,7 @@ const App = {
       // Bemästrat ett ämne (nådde max nivå)?
       if (afterLevel >= MAX_LEVEL && beforeLevel < MAX_LEVEL) {
         this.award(50);
-        this.toast("🧠 Grundämne bemästrat! +50 XP");
+        this.toast("🧠 Jon bemästrad! +50 XP");
       }
       // Rätt svar → ta bort från fel-listan.
       Store.removeMistake(question.element.number);
