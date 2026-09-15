@@ -60,76 +60,199 @@ function renderAnswerArea(q, container, onAnswer) {
 // LEARN – flashcards
 // ==========================================================================
 const Learn = {
+  // ----- Startskärm: välj vilken sida som visas först -----
   start() {
     const app = this;
-    // Ordna: markerade svåra + låg nivå först, annars nummerordning.
-    this.learnQueue = ELEMENTS.slice().sort((a, b) => a.number - b.number);
-    this.learnIndex = 0;
-    Learn.renderCard.call(app);
+    app.html(`
+      <section class="view center-col">
+        <header class="hero"><h1>Lär dig – swipa</h1></header>
+        <p class="mode-desc">Titta på kortet och försök komma på svaret. <b>Tryck på kortet</b> för att vända och se facit.<br>👉 Swipa <b>höger = Jag kan</b> · 👈 vänster <b>= Kan inte</b>.<br>På slutet testas du på det du inte kunde.</p>
+
+        <div class="section-title" style="text-align:center;margin-bottom:8px;">Vilken sida visas först?</div>
+        <div class="pill-row" id="sideSel">
+          <button class="pill active" data-side="name">Jon (namn)</button>
+          <button class="pill" data-side="symbol">Formel</button>
+          <button class="pill" data-side="mix">Blanda</button>
+        </div>
+        <button class="btn btn-primary btn-block" id="startDeck">Starta ✨</button>
+        <div class="spacer"></div>
+      </section>`);
+
+    let side = "name";
+    app.root.querySelectorAll("#sideSel .pill").forEach((p) =>
+      p.addEventListener("click", () => {
+        app.root.querySelectorAll("#sideSel .pill").forEach((x) => x.classList.remove("active"));
+        p.classList.add("active"); side = p.dataset.side;
+      }));
+    document.getElementById("startDeck").addEventListener("click", () => {
+      app.deck = { cards: Engine.shuffle(ELEMENTS), index: 0, side, known: 0, unknown: [] };
+      Learn.renderDeck.call(app);
+    });
   },
 
-  renderCard() {
+  // ----- Kortleken (Tinder-stil) -----
+  renderDeck() {
     const app = this;
-    const total = app.learnQueue.length;
-    if (app.learnIndex >= total) {
-      // Klart – erbjud quiz.
-      app.html(`
-        <section class="view center-col">
-          <div class="hero"><h1>Genomgång klar! 🎉</h1></div>
-          <p class="mode-desc">Du har gått igenom alla korten.<br>Nu är det dags att testa dig själv.</p>
-          <div style="width:100%;max-width:420px;display:grid;gap:12px;">
-            <button class="btn btn-accent btn-block" id="toQuiz">⚡ Kör ett quiz</button>
-            <button class="btn btn-green btn-block" id="toBlind">✍️ Skriv allt</button>
-            <button class="btn btn-dark btn-block" id="toHome">🏠 Till start</button>
-          </div>
-        </section>`);
-      document.getElementById("toQuiz").addEventListener("click", () => app.go("quiz"));
-      document.getElementById("toBlind").addEventListener("click", () => app.go("blind"));
-      document.getElementById("toHome").addEventListener("click", () => app.go("home"));
-      return;
-    }
-    const el = app.learnQueue[app.learnIndex];
-    const st = Store.el(el.number);
-    const pct = Math.round((app.learnIndex / total) * 100);
+    const dk = app.deck;
+    if (dk.index >= dk.cards.length) { Learn.finish.call(app); return; }
+
+    const el = dk.cards[dk.index];
+    const total = dk.cards.length;
+    const pct = Math.round((dk.index / total) * 100);
+    const side = dk.side === "mix" ? (Math.random() < 0.5 ? "name" : "symbol") : dk.side;
+    const frontLabel = side === "name" ? "Jon" : "Formel";
+    const frontVal = side === "name" ? el.name : el.symbol;
+    const backLabel = side === "name" ? "Formel" : "Jon";
+    const backVal = side === "name" ? el.symbol : el.name;
 
     app.html(`
       <section class="view center-col">
-        <div class="progress-mini">
-          <div class="lbl">Kort ${app.learnIndex + 1} av ${total}</div>
+        <div class="progress-mini" style="max-width:380px;width:100%;">
+          <div class="lbl">Kort ${dk.index + 1}/${total} · 👍 ${dk.known} · 👎 ${dk.unknown.length}</div>
           <div class="progress"><span style="width:${pct}%"></span></div>
         </div>
-        <div class="el-card">
-          <div class="num-r">${Learn.starText(st.level)}</div>
-          <div class="sym">${el.symbol}</div>
-          <div class="name">${el.name}</div>
-        </div>
-        <div class="hint-box"><b>${el.name} = ${el.symbol}</b>${el.hint ? "<br>" + el.hint : ""}</div>
-        <div class="learn-actions">
-          <button class="btn btn-amber" id="hard"><span class="emj">📌</span><span>Behöver träna mer</span></button>
-          <button class="btn btn-green" id="know"><span class="emj">✅</span><span>Jag kan den</span></button>
-        </div>
-      </section>
-    `);
 
-    document.getElementById("know").addEventListener("click", () => {
-      st.markedHard = false;
-      // Räknas som ett svagt "rätt" – höj lite men inte till mästrad direkt.
-      if (st.level < 3) st.level++;
-      st.seen++;
-      Store.save();
-      app.award(2);
-      app.learnIndex++;
-      Learn.renderCard.call(app);
+        <div class="swipe-wrap">
+          <div class="deck">
+            <div class="swipe-card" id="card">
+              <div class="swipe-badge like">KAN 👍</div>
+              <div class="swipe-badge nope">KAN INTE 👎</div>
+              <div class="flip" id="flip">
+                <div class="face front">
+                  <span class="c-tag">${frontLabel}</span>
+                  <div class="c-val">${frontVal}</div>
+                  <span class="c-tap">tryck för att vända</span>
+                </div>
+                <div class="face back">
+                  <span class="c-tag">${backLabel}</span>
+                  <div class="c-val">${backVal}</div>
+                  <div class="c-pair">${el.name} = ${el.symbol}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="swipe-actions">
+          <button class="round-btn nope" id="btnNope" aria-label="Kan inte">👎</button>
+          <button class="round-btn flip" id="btnFlip" aria-label="Vänd kortet">↻</button>
+          <button class="round-btn like" id="btnLike" aria-label="Kan">👍</button>
+        </div>
+        <button class="hint-btn" id="deckHome" style="margin-top:10px;">Avsluta</button>
+      </section>`);
+
+    Learn.bindCard.call(app, el);
+  },
+
+  bindCard(el) {
+    const app = this;
+    const dk = app.deck;
+    const card = document.getElementById("card");
+    const flip = document.getElementById("flip");
+    let dx = 0, dy = 0, sx = 0, sy = 0, dragging = false, moved = false, flipped = false, done = false;
+
+    const doFlip = () => { flipped = !flipped; flip.classList.toggle("flipped", flipped); };
+
+    const decide = (dir) => {
+      if (done) return; done = true;
+      card.style.transition = "transform .28s ease, opacity .28s ease";
+      card.style.transform = `translate(${dir * 140}%, -30px) rotate(${dir * 20}deg)`;
+      card.style.opacity = "0";
+      const st = Store.el(el.number);
+      if (dir > 0) {                       // swipe höger = jag kan
+        st.markedHard = false;
+        if (st.level < 3) st.level++;
+        st.seen++;
+        Store.removeMistake(el.number);
+        dk.known++; app.award(2);
+      } else {                             // swipe vänster = kan inte
+        st.markedHard = true;
+        st.level = Math.max(0, st.level - 1);
+        st.due = Store.data.answeredCount;
+        Store.addMistake(el.number);
+        dk.unknown.push(el.number);
+      }
+      Store.save(); app.updateTopbar();
+      setTimeout(() => { dk.index++; Learn.renderDeck.call(app); }, 250);
+    };
+    app._deckDecide = decide;
+    app._deckFlip = doFlip;
+
+    const setBadge = (v) => {
+      card.classList.toggle("show-like", v > 40);
+      card.classList.toggle("show-nope", v < -40);
+    };
+
+    card.addEventListener("pointerdown", (e) => {
+      if (done) return;
+      dragging = true; moved = false; sx = e.clientX; sy = e.clientY;
+      try { card.setPointerCapture(e.pointerId); } catch (err) {}
+      card.style.transition = "none";
     });
-    document.getElementById("hard").addEventListener("click", () => {
-      st.markedHard = true;
-      st.level = Math.max(0, st.level - 1);
-      st.due = Store.data.answeredCount; // snart igen
-      Store.save();
-      app.toast("Sparad som svår – vi tränar den mer 📌");
-      app.learnIndex++;
-      Learn.renderCard.call(app);
+    card.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      dx = e.clientX - sx; dy = e.clientY - sy;
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+      card.style.transform = `translate(${dx}px, ${dy * 0.22}px) rotate(${dx / 18}deg)`;
+      setBadge(dx);
     });
+    const up = () => {
+      if (!dragging) return; dragging = false;
+      const T = 90;
+      if (dx > T) return decide(1);
+      if (dx < -T) return decide(-1);
+      // liten rörelse = tap = vänd kortet
+      card.style.transition = "transform .25s ease";
+      card.style.transform = ""; setBadge(0);
+      if (!moved) doFlip();
+      dx = 0; dy = 0;
+    };
+    card.addEventListener("pointerup", up);
+    card.addEventListener("pointercancel", up);
+
+    document.getElementById("btnLike").addEventListener("click", () => decide(1));
+    document.getElementById("btnNope").addEventListener("click", () => decide(-1));
+    document.getElementById("btnFlip").addEventListener("click", doFlip);
+    document.getElementById("deckHome").addEventListener("click", () => app.go("home"));
+
+    // Tangentbord för dator (bind bara en gång).
+    if (!app._deckKeyBound) {
+      app._deckKeyBound = true;
+      document.addEventListener("keydown", (e) => {
+        if (app.currentView !== "learn" || !document.getElementById("card")) return;
+        if (e.key === "ArrowRight") { e.preventDefault(); app._deckDecide && app._deckDecide(1); }
+        else if (e.key === "ArrowLeft") { e.preventDefault(); app._deckDecide && app._deckDecide(-1); }
+        else if (e.key === " " || e.key === "Enter" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+          e.preventDefault(); app._deckFlip && app._deckFlip();
+        }
+      });
+    }
+  },
+
+  finish() {
+    const app = this;
+    const dk = app.deck;
+    const unknown = [...new Set(dk.unknown)];
+    app.html(`
+      <section class="view center-col">
+        <header class="hero"><h1>Klart! 🎉</h1></header>
+        <p class="mode-desc">Du kunde <b>${dk.known}</b> av <b>${dk.cards.length}</b> direkt.${unknown.length ? ` <b>${unknown.length}</b> behöver mer träning.` : " Snyggt jobbat!"}</p>
+        <div style="width:100%;max-width:380px;display:grid;gap:12px;">
+          ${unknown.length ? `<button class="btn btn-primary btn-block" id="testUnknown">📝 Testa det du inte kunde (${unknown.length})</button>` : ""}
+          <button class="btn btn-block" id="againDeck">↻ Gör om korten</button>
+          <button class="btn btn-block" id="toHome">🏠 Till start</button>
+        </div>
+      </section>`);
+    if (!unknown.length) app.burst();
+    const t = document.getElementById("testUnknown");
+    if (t) t.addEventListener("click", () => Quiz.startAdaptive.call(app, {
+      label: "Gör om fel",
+      length: Math.max(8, Math.min(16, unknown.length * 2)),
+      pool: unknown.map((n) => Engine.byNumber(n)),
+      showFeedback: true, forceMix: true
+    }));
+    document.getElementById("againDeck").addEventListener("click", () => Learn.start.call(app));
+    document.getElementById("toHome").addEventListener("click", () => app.go("home"));
   },
 
   starText(level) {
