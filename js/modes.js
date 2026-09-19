@@ -282,20 +282,49 @@ const Quiz = {
     Quiz.nextAdaptive.call(app);
   },
 
+  // ----- Fast lista MED feedback (t.ex. Miniquiz: en fråga per jon) -----
+  startFixed(config) {
+    const app = this;
+    app.session = {
+      config,
+      label: config.label,
+      length: config.questions.length,
+      questions: config.questions,
+      fixed: true,
+      showFeedback: true,
+      index: 0,
+      score: 0,
+      lastNum: null,
+      results: [],
+      forceMix: false
+    };
+    Quiz.nextAdaptive.call(app);
+  },
+
   nextAdaptive() {
     const app = this;
     const s = app.session;
     if (s.index >= s.length) {
+      const cfg = s.config || {};
+      const miniNext = (cfg.miniTour && cfg.miniIndex != null && cfg.miniIndex < MINI_GROUPS.length - 1)
+        ? cfg.miniIndex + 1 : null;
       Results.show.call(app, {
         label: s.label, score: s.score, total: s.length,
-        results: s.results, grade: false, quizDone: true
+        results: s.results, grade: false, quizDone: true,
+        miniNext, miniTourDone: !!(cfg.miniTour && cfg.miniIndex === MINI_GROUPS.length - 1),
+        miniIndex: cfg.miniIndex
       });
       return;
     }
-    const el = Engine.pickWeighted(s.pool, s.lastNum);
-    s.lastNum = el.number;
-    const type = Engine.pickType(el, { forceMix: s.forceMix, testMode: false });
-    const q = Engine.buildQuestion(el, type);
+    let q;
+    if (s.fixed) {
+      q = s.questions[s.index];
+    } else {
+      const el = Engine.pickWeighted(s.pool, s.lastNum);
+      s.lastNum = el.number;
+      const type = Engine.pickType(el, { forceMix: s.forceMix, testMode: false });
+      q = Engine.buildQuestion(el, type);
+    }
     s.current = q;
     Quiz.renderAdaptive.call(app, q);
   },
@@ -586,6 +615,25 @@ const Blind = {
 };
 
 // ==========================================================================
+// MINIQUIZ – 4 korta omgångar (7 joner var). En fråga per jon. Gå igenom allt.
+// ==========================================================================
+const MiniQuiz = {
+  start(index, tour) {
+    const app = this;
+    const g = MINI_GROUPS[index];
+    const types = ["sym2name", "name2sym", "write"];
+    const els = Engine.shuffle(g.nums.map((n) => Engine.byNumber(n)));
+    const questions = els.map((el, i) => Engine.buildQuestion(el, types[i % types.length]));
+    Quiz.startFixed.call(app, {
+      label: tour ? `Miniquiz ${index + 1}/4` : g.label,
+      questions,
+      miniIndex: index,
+      miniTour: !!tour
+    });
+  }
+};
+
+// ==========================================================================
 // TABLE – "Fyll i tabellen": alla 20 uppradade, göm kolumner, skriv in, rätta
 // ==========================================================================
 const Table = {
@@ -836,6 +884,11 @@ const Results = {
         </div>
 
         ${finalBanner}
+        ${cfg.miniTourDone ? `
+          <div class="feedback ok" style="text-align:center;">
+            <div class="fb-title">🎉 Du har gått igenom alla ${TOTAL}!</div>
+            <div class="fb-body">Alla fyra miniquiz är klara. Snyggt jobbat.</div>
+          </div>` : ""}
 
         <div class="result-lists">
           <div class="box good"><h4>✅ Du är bäst på</h4><ul>${
@@ -858,6 +911,8 @@ const Results = {
 
         <div class="spacer"></div>
         <div style="display:grid;gap:12px;">
+          ${cfg.miniNext != null ? `<button class="big-final-btn" id="nextMini">Nästa: ${MINI_GROUPS[cfg.miniNext].label} →</button>` : ""}
+          ${cfg.miniTourDone ? `<button class="btn btn-solid btn-block" id="restartTour">🧩 Börja om från Mini 1</button>` : ""}
           ${Store.mistakeList().length ? `<button class="btn btn-solid btn-block" id="doMiss">🔁 Gör om felen (${Store.mistakeList().length})</button>` : ""}
           ${trainNames.length ? `<button class="btn btn-block" id="trainWeak">🎯 Träna på mina svaga joner</button>` : ""}
           <button class="btn btn-block" id="again">↻ Kör igen</button>
@@ -871,12 +926,20 @@ const Results = {
 
     if (perfect || knowAll || pct >= 90) app.burst();
 
+    const nm = document.getElementById("nextMini");
+    if (nm) nm.addEventListener("click", () => MiniQuiz.start.call(app, cfg.miniNext, true));
+    const rt = document.getElementById("restartTour");
+    if (rt) rt.addEventListener("click", () => MiniQuiz.start.call(app, 0, true));
     const dm = document.getElementById("doMiss");
     if (dm) dm.addEventListener("click", () => app.go("mistakes"));
     const tw = document.getElementById("trainWeak");
     if (tw) tw.addEventListener("click", () => app.go("review"));
     document.getElementById("again").addEventListener("click", () => {
-      // Kör samma läge igen om möjligt.
+      if (label && String(label).indexOf("Miniquiz") === 0) {
+        if (cfg.miniIndex != null) MiniQuiz.start.call(app, cfg.miniIndex, false);
+        else app.go("miniquiz");
+        return;
+      }
       const map = { "Snabbquiz": "quiz", "Repetera svåra": "review", "Prov imorgon": "examtomorrow",
                     "Snabbtest": "quicktest", "Prov-simulering": "examsim", "Sluttest": "finaltest",
                     "Skriv allt": "blind", "Gör om fel": "mistakes" };

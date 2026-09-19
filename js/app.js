@@ -106,6 +106,7 @@ const App = {
           <div class="btn-grid">
             <button class="btn btn-primary" data-go="learn"><span class="emj">📚</span><span>Lär dig<small>Korten steg för steg</small></span></button>
             <button class="btn btn-accent" data-go="quiz"><span class="emj">⚡</span><span>Snabbquiz<small>4 delar · adaptivt</small></span></button>
+            <button class="btn btn-primary" data-go="miniquiz"><span class="emj">🧩</span><span>Miniquiz<small>Gå igenom alla 28</small></span></button>
             <button class="btn btn-amber" data-go="review"><span class="emj">🎯</span><span>Repetera svåra<small>Dina svaga joner</small></span></button>
             <button class="btn btn-red" data-go="mistakes"><span class="emj">🔁</span><span>Gör om fel<small>${Store.mistakeList().length ? Store.mistakeList().length + " att träna om" : "Inga fel just nu"}</small></span></button>
             <button class="btn btn-green" data-go="blind"><span class="emj">✍️</span><span>Skriv allt<small>Fyll i på blindo</small></span></button>
@@ -194,6 +195,36 @@ const App = {
         b.addEventListener("click", () => start(groups[+b.dataset.part].nums, 12)));
       document.getElementById("allBtn").addEventListener("click", () =>
         start(ELEMENTS.map((e) => e.number), 18));
+    },
+
+    // ---------------- MINIQUIZ ----------------
+    miniquiz() {
+      const cards = MINI_GROUPS.map((g, i) => {
+        const names = g.nums.map((n) => Engine.byNumber(n).name.replace(/jon$/i, "")).join(", ");
+        const done = g.nums.filter((n) => Store.el(n).level >= MAX_LEVEL).length;
+        return `
+          <button class="btn btn-dark" data-mini="${i}">
+            <span class="emj">${done === g.nums.length ? "✅" : "🧩"}</span>
+            <span>${g.label}
+            <small>${names} · ${done}/${g.nums.length} klara</small></span>
+          </button>`;
+      }).join("");
+
+      this.html(`
+        <section class="view">
+          <header class="hero"><h1>Miniquiz</h1><p>Gå igenom alla 28 joner – 7 i taget.</p></header>
+          <p class="mode-desc">Varje mini är 7 korta frågor (en per jon). Ta en i taget, eller tryck <b>Gå igenom allt</b> så körs Mini 1 → 2 → 3 → 4 i följd.</p>
+
+          <button class="big-final-btn" id="tourBtn">🧩 Gå igenom allt</button>
+          <div class="spacer"></div>
+          <div class="section-title">Eller en mini i taget</div>
+          <div class="btn-grid">${cards}</div>
+        </section>
+      `);
+
+      document.getElementById("tourBtn").addEventListener("click", () => MiniQuiz.start.call(this, 0, true));
+      this.root.querySelectorAll("[data-mini]").forEach((b) =>
+        b.addEventListener("click", () => MiniQuiz.start.call(this, +b.dataset.mini, false)));
     },
 
     // ---------------- REVIEW HARD ----------------

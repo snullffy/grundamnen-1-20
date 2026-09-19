@@ -35,6 +35,14 @@ const ELEMENTS = [
 // Totalt antal (används överallt istället för hårdkodat tal).
 const TOTAL = ELEMENTS.length;
 
+// Miniquiz: 4 korta omgångar à 7 joner så man kan gå igenom allt.
+const MINI_GROUPS = [
+  { label: "Mini 1", nums: [1, 2, 3, 4, 5, 6, 7] },
+  { label: "Mini 2", nums: [8, 9, 10, 11, 12, 13, 14] },
+  { label: "Mini 3", nums: [15, 16, 17, 18, 19, 20, 21] },
+  { label: "Mini 4", nums: [22, 23, 24, 25, 26, 27, 28] }
+];
+
 // Achievements-definitioner
 const ACHIEVEMENTS = [
   { id: "first_quiz",  emoji: "🏆", name: "Första quizet",   desc: "Klara ditt första quiz" },
