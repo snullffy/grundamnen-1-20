@@ -6,7 +6,7 @@
 
 :root {
   /* neutrals (light) */
-  --bg:        #F6F6F4;
+  --bg:        #F4F1EA;
   --panel:     #FFFFFF;
   --panel-2:   #F1F1EE;
   --panel-3:   #EAEAE6;
@@ -17,10 +17,10 @@
   --border-2:  #D9D8D3;
 
   /* single accent + semantic (muted, comfortable) */
-  --accent:      #5B5BD6;
-  --accent-2:    #4B4BC7;
-  --accent-weak: rgba(91,91,214,0.10);
-  --accent-line: rgba(91,91,214,0.28);
+  --accent:      #2F6F5E;
+  --accent-2:    #245A4C;
+  --accent-weak: rgba(47,111,94,0.12);
+  --accent-line: rgba(47,111,94,0.28);
   --ok:        #2E9E5B;
   --ok-weak:   rgba(46,158,91,0.12);
   --bad:       #CF4B4B;
@@ -57,10 +57,10 @@ html[data-theme="dark"] {
   --border:    #2C2F36;
   --border-2:  #363A42;
 
-  --accent:      #8385F0;
-  --accent-2:    #9B9CF3;
-  --accent-weak: rgba(131,133,240,0.14);
-  --accent-line: rgba(131,133,240,0.38);
+  --accent:      #6DB39A;
+  --accent-2:    #7FC4AB;
+  --accent-weak: rgba(109,179,154,0.16);
+  --accent-line: rgba(109,179,154,0.38);
   --ok:        #46BC77;
   --ok-weak:   rgba(70,188,119,0.16);
   --bad:       #E06B6B;
