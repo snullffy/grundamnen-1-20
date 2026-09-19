@@ -615,7 +615,7 @@ const Blind = {
 };
 
 // ==========================================================================
-// MINIQUIZ – 4 korta omgångar (7 joner var). En fråga per jon. Gå igenom allt.
+// MINIQUIZ – 8 korta omgångar (3–4 joner var). En fråga per jon. Gå igenom allt.
 // ==========================================================================
 const MiniQuiz = {
   start(index, tour) {
@@ -625,7 +625,7 @@ const MiniQuiz = {
     const els = Engine.shuffle(g.nums.map((n) => Engine.byNumber(n)));
     const questions = els.map((el, i) => Engine.buildQuestion(el, types[i % types.length]));
     Quiz.startFixed.call(app, {
-      label: tour ? `Miniquiz ${index + 1}/4` : g.label,
+      label: tour ? `Miniquiz ${index + 1}/8` : g.label,
       questions,
       miniIndex: index,
       miniTour: !!tour
@@ -887,7 +887,7 @@ const Results = {
         ${cfg.miniTourDone ? `
           <div class="feedback ok" style="text-align:center;">
             <div class="fb-title">🎉 Du har gått igenom alla ${TOTAL}!</div>
-            <div class="fb-body">Alla fyra miniquiz är klara. Snyggt jobbat.</div>
+            <div class="fb-body">Alla åtta miniquiz är klara. Snyggt jobbat.</div>
           </div>` : ""}
 
         <div class="result-lists">

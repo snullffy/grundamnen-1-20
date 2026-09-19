@@ -106,7 +106,7 @@ const App = {
           <div class="btn-grid">
             <button class="btn btn-primary" data-go="learn"><span class="emj">📚</span><span>Lär dig<small>Korten steg för steg</small></span></button>
             <button class="btn btn-accent" data-go="quiz"><span class="emj">⚡</span><span>Snabbquiz<small>4 delar · adaptivt</small></span></button>
-            <button class="btn btn-primary" data-go="miniquiz"><span class="emj">🧩</span><span>Miniquiz<small>Gå igenom alla 28</small></span></button>
+            <button class="btn btn-primary" data-go="miniquiz"><span class="emj">🧩</span><span>Miniquiz<small>8 korta quiz</small></span></button>
             <button class="btn btn-amber" data-go="review"><span class="emj">🎯</span><span>Repetera svåra<small>Dina svaga joner</small></span></button>
             <button class="btn btn-red" data-go="mistakes"><span class="emj">🔁</span><span>Gör om fel<small>${Store.mistakeList().length ? Store.mistakeList().length + " att träna om" : "Inga fel just nu"}</small></span></button>
             <button class="btn btn-green" data-go="blind"><span class="emj">✍️</span><span>Skriv allt<small>Fyll i på blindo</small></span></button>
@@ -212,8 +212,8 @@ const App = {
 
       this.html(`
         <section class="view">
-          <header class="hero"><h1>Miniquiz</h1><p>Gå igenom alla 28 joner – 7 i taget.</p></header>
-          <p class="mode-desc">Varje mini är 7 korta frågor (en per jon). Ta en i taget, eller tryck <b>Gå igenom allt</b> så körs Mini 1 → 2 → 3 → 4 i följd.</p>
+          <header class="hero"><h1>Miniquiz</h1><p>Gå igenom alla 28 joner – 3–4 i taget.</p></header>
+          <p class="mode-desc">Varje mini är 3–4 korta frågor (en per jon). Ta en i taget, eller tryck <b>Gå igenom allt</b> så körs Mini 1 → 8 i följd.</p>
 
           <button class="big-final-btn" id="tourBtn">🧩 Gå igenom allt</button>
           <div class="spacer"></div>
